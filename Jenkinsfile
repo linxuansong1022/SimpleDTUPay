@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        // 如果你的 Jenkins 全局工具配置里有名为 'maven-3' 和 'jdk-21' 的配置，请取消注释
-        // maven 'maven-3'
-        // jdk 'jdk-21'
-    }
-
     stages {
         stage('Checkout') {
             steps {
