@@ -8,52 +8,18 @@ pipeline {
             }
         }
 
-        stage('Compile') {
-            steps {
-                // 编译并生成 SOAP 代码
-                sh 'mvn clean compile'
-            }
-        }
-
         stage('Test') {
             steps {
-                script {
-                    try {
-                        // 1. 后台启动 Quarkus 应用
-                        echo "Starting Quarkus application..."
-                        // 使用 nohup 运行，并将 PID 写入文件
-                        sh 'nohup mvn quarkus:dev > quarkus.log 2>&1 & echo $! > quarkus.pid'
-
-                        // 2. 等待应用启动 (检查端口 8080)
-                        echo "Waiting for application to become ready..."
-                        // 循环检查，最多等待 30 次，每次 2 秒
-                        sh '''
-                            for i in {1..30}; do
-                                if curl -s http://localhost:8080/q/health > /dev/null; then
-                                    echo "Application is up!"
-                                    exit 0
-                                fi
-                                echo "Waiting..."
-                                sleep 2
-                            done
-                            echo "Timeout waiting for app"
-                            exit 1
-                        '''
-
-                        // 3. 运行 Cucumber 测试
-                        echo "Running Cucumber tests..."
-                        sh 'mvn test'
-
-                    } finally {
-                        // 4. 清理：停止应用并打印日志
-                        echo "Stopping application..."
-                        sh 'if [ -f quarkus.pid ]; then kill $(cat quarkus.pid) || true; fi'
-                        
-                        echo "--- Quarkus Logs ---"
-                        sh 'cat quarkus.log || true'
-                    }
-                }
+                // 直接运行测试，Quarkus 会自动处理应用的启动和关闭
+                // -Djava.net.preferIPv4Stack=true 防止 IPv6 问题
+                sh 'mvn test -Djava.net.preferIPv4Stack=true'
             }
+        }
+    }
+    
+    post {
+        always {
+            junit '**/target/surefire-reports/*.xml'
         }
     }
 }
